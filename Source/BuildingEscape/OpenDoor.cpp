@@ -1,7 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
+#include "Components/AudioComponent.h"
+#include "Components/PrimitiveComponent.h"
 #include "OpenDoor.h"
+
+#define OUT
 
 // Sets default values for this component's properties
 UOpenDoor::UOpenDoor()
@@ -19,6 +22,8 @@ void UOpenDoor::BeginPlay()
 {
 	Super::BeginPlay();
 
+	FindAudioComponent();
+
 	float MyFloat = 90.0f;
 
 	StartingRotation = GetOwner()->GetActorRotation();
@@ -26,8 +31,6 @@ void UOpenDoor::BeginPlay()
 	// UE_LOG(LogTemp, Warning, TEXT("Current rotation: %s"), *StartingRotation.ToString());
 	CloseDoorRot = StartingRotation;
 	OpenDoorRot = FRotator(StartingRotation.Pitch, StartingRotation.Yaw + OpenCloseYawDiff, StartingRotation.Roll);
-
-	ActorOpen = GetWorld()->GetFirstPlayerController()->GetPawn();
 
 	if (!OpenPlate) {
 		UE_LOG(LogTemp, Error, TEXT("%s has an OpenDoor Component but OpenPlate is NULL!"), *GetOwner()->GetName());
@@ -42,7 +45,10 @@ void UOpenDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 
 	float CTime = GetWorld()->GetTimeSeconds();
 	
-	if (OpenPlate && OpenPlate->IsOverlappingActor(ActorOpen)) {
+	if (TotalMassOfActors() > 4) {
+		if (DoorIsClosed) {
+			AudioComponent->Play();
+		}
 		if (!DoorIsOpen) {
 			DoorIsClosed = false;
 			IsOpening = true;
@@ -52,7 +58,10 @@ void UOpenDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 			DoorLastOpened = GetWorld()->GetTimeSeconds();
 		}
 	}
-	else if (OpenPlate && !DoorIsClosed && !OpenPlate->IsOverlappingActor(ActorOpen) && DoorLastOpened && GetWorld()->GetTimeSeconds() - DoorLastOpened > DoorCloseDelay) {
+	else if (OpenPlate && !DoorIsClosed && DoorLastOpened && GetWorld()->GetTimeSeconds() - DoorLastOpened > DoorCloseDelay) {
+		if (DoorIsOpen) {
+			AudioComponent->Play();
+		}
 		DoorIsOpen = false;
 		IsOpening = false;
 		IsClosing = true;
@@ -61,6 +70,14 @@ void UOpenDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 		OpenDoor(DeltaTime);
 	} else if (IsClosing) {
 		CloseDoor(DeltaTime);
+	}
+}
+
+void UOpenDoor::FindAudioComponent() {
+	AudioComponent = GetOwner()->FindComponentByClass<UAudioComponent>();
+
+	if (!AudioComponent) {
+		UE_LOG(LogTemp, Error, TEXT("%s missing audio component!"), *GetOwner()->GetName());
 	}
 }
 
@@ -94,3 +111,14 @@ void UOpenDoor::CloseDoor(float DeltaTime) {
 	}
 }
 
+float UOpenDoor::TotalMassOfActors() const {
+	float TotalMass = 0.f;
+
+	OUT TArray<AActor*> OverlappingActors;
+	OpenPlate->GetOverlappingActors(OverlappingActors);
+
+	for (AActor* Actor : OverlappingActors) {
+		TotalMass += Actor->FindComponentByClass<UPrimitiveComponent>()->GetMass();
+	}
+	return TotalMass;
+}

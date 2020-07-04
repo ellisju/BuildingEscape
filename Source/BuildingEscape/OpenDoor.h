@@ -20,8 +20,10 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-	virtual void OpenDoor(float DeltaTime);
-	virtual void CloseDoor(float DeltaTime);
+	void OpenDoor(float DeltaTime);
+	void CloseDoor(float DeltaTime);
+	float TotalMassOfActors() const;
+	void FindAudioComponent();
 
 public:	
 	// Called every frame
@@ -31,9 +33,7 @@ private:
 	UPROPERTY(EditAnywhere);
 	float OpenCloseYawDiff = 90.0f;
 	UPROPERTY(EditAnywhere);
-	ATriggerVolume* OpenPlate;
-	UPROPERTY(EditAnywhere);
-	AActor* ActorOpen;
+	ATriggerVolume* OpenPlate = nullptr;
 	UPROPERTY(EditAnywhere);
 	float DoorCloseDelay = 1.0f;
 	UPROPERTY(EditAnywhere);
@@ -54,4 +54,7 @@ private:
 	FRotator CurrentRotation;
 	FRotator OpenDoorRot;
 	FRotator CloseDoorRot;
+
+	UPROPERTY()
+	UAudioComponent* AudioComponent = nullptr;
 };

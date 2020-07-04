@@ -33,7 +33,11 @@ private:
 	UPROPERTY(EditAnywhere);
 	float DebugLineThickness = 1.f;
 	
+	// According to Unreal documentation, anything of a type "U<whatever>" should marked as a UProperty.
+	UPROPERTY()
 	UPhysicsHandleComponent* PhysicsHandle = nullptr;
+	UPROPERTY()
 	UInputComponent* InputComponent = nullptr;
+
 	FHitResult GetBodyWithinReach() const;
 };
